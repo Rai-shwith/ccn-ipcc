@@ -1,6 +1,16 @@
 @echo off
 setlocal enabledelayedexpansion
 
+:: --------------------------------------------------
+:: Fix for running script via "curl ... | cmd"
+:: When piped, %0 is empty. Relaunch script properly.
+:: --------------------------------------------------
+if "%~f0"=="" (
+    echo Relaunching script properly...
+    powershell -NoProfile -Command "Start-Process cmd -ArgumentList '/c \"%CD%\setup.bat\"' -WindowStyle Normal"
+    exit /b
+)
+
 :menu
 cls
 echo Select the code you want:
@@ -14,6 +24,7 @@ echo 6. point2point.cc
 echo 7. stopNwait.c
 echo.
 
+set "file="
 set /p choice=Enter number (1-7): 
 
 if "%choice%"=="1" set file=bit_stuffing.c
@@ -39,10 +50,8 @@ move /Y "codes\%file%" "%file%" >nul
 
 :: Remove ENTIRE repo except selected file
 for /d %%d in (*) do (
-    if /I not "%%d"=="." (
-        if /I not "%%d"==".." (
-            rd /s /q "%%d"
-        )
+    if /I not "%%d"=="." if /I not "%%d"==".." (
+        rd /s /q "%%d"
     )
 )
 
