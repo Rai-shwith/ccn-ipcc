@@ -1,15 +1,11 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: --------------------------------------------------
-:: Fix for running script via "curl ... | cmd"
-:: When piped, %0 is empty. Relaunch script properly.
-:: --------------------------------------------------
-if "%~f0"=="" (
-    echo Relaunching script properly...
-    powershell -NoProfile -Command "Start-Process cmd -ArgumentList '/c \"%CD%\setup.bat\"' -WindowStyle Normal"
-    exit /b
-)
+:: Folder where this script lives
+set "ROOT=%~dp0"
+
+:: Parent directory (CCN)
+for %%A in ("%ROOT%..") do set "PARENT=%%~fA\"
 
 :menu
 cls
@@ -35,7 +31,6 @@ if "%choice%"=="5" set file=encrypt.c
 if "%choice%"=="6" set file=point2point.cc
 if "%choice%"=="7" set file=stopNwait.c
 
-:: Validate input
 if not defined file (
     echo Invalid selection!
     pause
@@ -45,21 +40,14 @@ if not defined file (
 echo You selected: %file%
 echo.
 
-:: Move selected file to repo root
-move /Y "codes\%file%" "%file%" >nul
+:: 1. Move chosen code to parent folder (CCN)
+move /Y "%ROOT%codes\%file%" "%PARENT%%file%" >nul
 
-:: Remove ENTIRE repo except selected file
-for /d %%d in (*) do (
-    if /I not "%%d"=="." if /I not "%%d"==".." (
-        rd /s /q "%%d"
-    )
-)
+:: 2. Move OUT of CCN-ipcc-main folder
+pushd "%PARENT%"
 
-for %%f in (*) do (
-    if /I not "%%f"=="%file%" (
-        del /q "%%f"
-    )
-)
+:: 3. Delete entire CCN-ipcc-main folder (including codes/)
+rd /s /q "%ROOT%"
 
 echo Done!
 echo Press any key to exit...
